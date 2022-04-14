@@ -735,3 +735,67 @@ test('toFeatures - Dont consider full context and spatialmatch text for short ad
     t.equal(results.features.length, 2, 'Short address queries with the same spatialmatch text should not be deduped');
     t.end();
 });
+
+test('toFeatures - different place names like park and pike shouldn not be deduped', (t) => {
+    const fakeAddressIndex = { simple_replacer: [], complex_query_replacer: [], geocoder_format: {}, type: 'address', geocoder_feature_types_in_format: false };
+    const fakePlaceIndex = { simple_replacer: [], complex_query_replacer: [], geocoder_format: {}, type: 'place', geocoder_feature_types_in_format: false };
+    const fakeCarmen = {
+        indexes: { address: fakeAddressIndex, place: fakePlaceIndex },
+        byidx: { 1: fakeAddressIndex, 2: fakePlaceIndex }
+    };
+    const results = format.toFeatures(fakeCarmen, [
+        [
+            {
+                properties: {
+                    'carmen:index': 'address',
+                    'carmen:idx': 1,
+                    'carmen:address': '140',
+                    'carmen:spatialmatch': { covers: [
+                        { text: '1## pk st' }] },
+                    'carmen:text': 'Pike Street',
+                    'carmen:types': ['address'],
+                    'carmen:center': [0, 0],
+                    'carmen:extid': 'address.1'
+                },
+                geometry: {}
+            },
+            {
+                properties: {
+                    'carmen:index': 'place',
+                    'carmen:idx': 2,
+                    'carmen:text': 'Springfield',
+                    'carmen:types': ['place'],
+                    'carmen:center': [0, 0],
+                    'carmen:extid': 'place.4'
+                }
+            }
+        ], [
+            {
+                properties: {
+                    'carmen:index': 'address',
+                    'carmen:idx': 1,
+                    'carmen:address': '140',
+                    'carmen:spatialmatch': { covers: [
+                        { text: '1## pk st' }] },
+                    'carmen:text': 'Park Street',
+                    'carmen:types': ['address'],
+                    'carmen:center': [0, 0],
+                    'carmen:extid': 'address.2'
+                },
+                geometry: {}
+            },
+            {
+                properties: {
+                    'carmen:index': 'place',
+                    'carmen:idx': 2,
+                    'carmen:text': 'Springfield',
+                    'carmen:types': ['place'],
+                    'carmen:center': [0, 0],
+                    'carmen:extid': 'place.4'
+                }
+            }
+        ]
+    ], {});
+    t.equal(results.features.length, 2, 'features with different place names should not be deduped;');
+    t.end();
+});
